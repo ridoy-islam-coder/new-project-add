@@ -1,27 +1,28 @@
 import express from "express";
 
 import { auth } from "../../middleware/auth.middleware";
-import { addpalndatails, createsubscription, creatsubscriptionplan, getsubscriptionplan } from "./subscription.controller";
 
+import * as subscriptionController from "./subscription.controller"
 
 
 
 
 const router = express.Router();
 
-// add-plan
-router.post("/add-plan",creatsubscriptionplan)
+// ===== TIER MANAGEMENT ROUTES =====
+router.post("/tiers", subscriptionController.createTier)
+router.get("/tiers", subscriptionController.getAllTiers)
+router.get("/tiers/:tierId", subscriptionController.getTierById)
+router.patch("/tiers/:tierId", subscriptionController.updateTier)
+router.post("/tiers/initialize", subscriptionController.initializeDefaultTiers)
 
-// get-plan
-router.get("/get-plan",auth,getsubscriptionplan)
+// ===== SUBSCRIPTION ROUTES =====
+router.post("/checkout", auth, subscriptionController.createCheckoutSession)
+router.get("/my-subscription", auth, subscriptionController.getUserSubscription)
+router.post("/cancel", auth, subscriptionController.cancelSubscription)
 
-
-
-// add-plan
-router.post("/plan-details",auth,addpalndatails)
-
-// add-plan
-router.post("/create-subscription",auth,createsubscription)
+// ===== WEBHOOK ROUTE =====
+router.post("/webhook", express.raw({ type: "application/json" }), subscriptionController.handleStripeWebhook)
 
 
 

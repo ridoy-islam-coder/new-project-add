@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { cardDetailModel } from "../app/modules/subscriptions-information/subscriptions.model";
+import { cardDetailModel } from "../app/modules/subscriptions-information/Subscription";
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, );
