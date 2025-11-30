@@ -3,6 +3,7 @@ import Stripe from "stripe"
 import SubscriptionTier from "./SubscriptionTier"
 import Subscription from "./Subscription"
 import Payment from "./Payment"
+import mongoose from "mongoose";
 
 interface AuthenticatedRequest extends Request {
   user?: any
@@ -89,53 +90,56 @@ export const updateTier = async (req: Request, res: Response): Promise<void> => 
 
 // ===== SUBSCRIPTION MANAGEMENT =====
 
+
+
+
 export const createCheckoutSession = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { tierId } = req.body
-    const userId = req.user?._id // Use _id from MongoDB user object
+    const { tierId } = req.body;
 
+    console.log("this is User:", req.user)
+    const userId = req.user?.id; // Middleware থেকে আসা user id
+     console.log("this is User ID:", userId)
     if (!userId) {
-      res.status(401).json({ error: "User not authenticated" })
-      return
+      res.status(401).json({ error: "User not authenticated" });
+      return;
     }
 
-    const tier = await SubscriptionTier.findById(tierId)
+    const tier = await SubscriptionTier.findById(new mongoose.Types.ObjectId(tierId));
     if (!tier) {
-      res.status(404).json({ error: "Tier not found" })
-      return
+      res.status(404).json({ error: "Tier not found" });
+      return;
     }
+    console.log("this is Tier:", tier)
 
-    // Check if user already has active subscription
     const existingSubscription = await Subscription.findOne({
       userId,
       status: { $in: ["active", "past_due"] },
-    })
+    });
 
     if (existingSubscription) {
-      res.status(400).json({ error: "User already has an active subscription" })
-      return
+      res.status(400).json({ error: "User already has an active subscription" });
+      return;
     }
 
-    // Create or get Stripe customer
-    const customer = await stripe.customers.list({
+    // Stripe customer
+    const customers = await stripe.customers.list({
       email: req.user?.email,
       limit: 1,
-    })
+    });
 
-    let stripeCustomerId = customer.data[0]?.id
+    let stripeCustomerId = customers.data[0]?.id;
 
     if (!stripeCustomerId) {
       const newCustomer = await stripe.customers.create({
         email: req.user?.email,
         metadata: { userId: userId.toString() },
-      })
-      stripeCustomerId = newCustomer.id
+      });
+      stripeCustomerId = newCustomer.id;
     }
 
-    // Convert hourly rate to monthly (730 hours per month average)
-    const monthlyPrice = Math.round(tier.pricePerHour * 730 * 100)
+    const monthlyPrice = Math.round(tier.pricePerHour * 730 * 100);
 
-    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       customer: stripeCustomerId,
@@ -148,33 +152,123 @@ export const createCheckoutSession = async (req: AuthenticatedRequest, res: Resp
               description: tier.description,
             },
             unit_amount: monthlyPrice,
-            recurring: {
-              interval: "month",
-              interval_count: 1,
-            },
+            recurring: { interval: "month", interval_count: 1 },
           },
           quantity: 1,
         },
       ],
       mode: "subscription",
-      success_url: `${process.env.FRONTEND_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/subscription/cancel`,
+      success_url: `${process.env.STRIPE_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.STRIPE_CANCEL_URL}`,
       metadata: {
         userId: userId.toString(),
         tierId: tierId,
         tierName: tier.name,
       },
-    })
+    });
 
-    res.status(200).json({ sessionId: session.id, sessionUrl: session.url })
+    res.status(200).json({ sessionId: session.id, sessionUrl: session.url });
   } catch (error) {
-    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to create checkout session" })
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to create checkout session" });
   }
-}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const getUserSubscription = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?._id
+    const userId = req.user?.id
 
     if (!userId) {
       res.status(401).json({ error: "User not authenticated" })
@@ -196,7 +290,7 @@ export const getUserSubscription = async (req: AuthenticatedRequest, res: Respon
 
 export const cancelSubscription = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?._id
+    const userId = req.user?.id
 
     if (!userId) {
       res.status(401).json({ error: "User not authenticated" })

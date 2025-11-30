@@ -32,7 +32,8 @@ export const auth= async(req:AuthenticatedRequest, res:Response, next:NextFuncti
     }
     req.user = {
         id: user._id,
-        role: user.role
+        role: user.role,
+        email: user.email
     }
     next();
   } catch (error) {

@@ -14,6 +14,8 @@ router.post("/tiers", subscriptionController.createTier)
 router.get("/tiers", subscriptionController.getAllTiers)
 router.get("/tiers/:tierId", subscriptionController.getTierById)
 router.patch("/tiers/:tierId", subscriptionController.updateTier)
+
+
 router.post("/tiers/initialize", subscriptionController.initializeDefaultTiers)
 
 // ===== SUBSCRIPTION ROUTES =====
