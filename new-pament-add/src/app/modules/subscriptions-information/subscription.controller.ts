@@ -185,59 +185,59 @@ export const createCheckoutSession = async (req: AuthenticatedRequest, res: Resp
 
 
 
-export const verifySubscription = async (req: Request, res: Response) => {
-  try {
-    const { session_id } = req.query;
+// export const verifySubscription = async (req: Request, res: Response) => {
+//   try {
+//     const { session_id } = req.query;
 
-    if (!session_id) {
-      return res.status(400).json({ error: "session_id is required" });
-    }
+//     if (!session_id) {
+//       return res.status(400).json({ error: "session_id is required" });
+//     }
 
-    // 1️⃣ Fetch checkout session from Stripe
-    const session = await stripe.checkout.sessions.retrieve(session_id as string);
+//     // 1️⃣ Fetch checkout session from Stripe
+//     const session = await stripe.checkout.sessions.retrieve(session_id as string);
 
-    if (!session.subscription) {
-      return res.status(400).json({ error: "No subscription found in session" });
-    }
+//     if (!session.subscription) {
+//       return res.status(400).json({ error: "No subscription found in session" });
+//     }
 
-    // 2️⃣ Get subscription details
-    const subscription = await stripe.subscriptions.retrieve(
-      session.subscription as string
-    );
+//     // 2️⃣ Get subscription details
+//     const subscription = await stripe.subscriptions.retrieve(
+//       session.subscription as string
+//     );
 
-    const userId = session.metadata?.userId;
-    const tierId = session.metadata?.tierId;
+//     const userId = session.metadata?.userId;
+//     const tierId = session.metadata?.tierId;
 
-    if (!userId || !tierId) {
-      return res.status(400).json({ error: "Invalid metadata" });
-    }
+//     if (!userId || !tierId) {
+//       return res.status(400).json({ error: "Invalid metadata" });
+//     }
 
-    // 3️⃣ Find the Tier info
-    const tier = await SubscriptionTier.findById(tierId);
-    if (!tier) return res.status(404).json({ error: "Tier not found" });
+//     // 3️⃣ Find the Tier info
+//     const tier = await SubscriptionTier.findById(tierId);
+//     if (!tier) return res.status(404).json({ error: "Tier not found" });
 
-    // 4️⃣ Save subscription in DB
-    const newSubscription = await Subscription.create({
-      userId,
-      tierId,
-      stripeCustomerId: session.customer,
-      stripeSubscriptionId: subscription.id,
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    });
+//     // 4️⃣ Save subscription in DB
+//     const newSubscription = await Subscription.create({
+//       userId,
+//       tierId,
+//       stripeCustomerId: session.customer,
+//       stripeSubscriptionId: subscription.id,
+//       status: subscription.status,
+//       currentPeriodStart: new Date(subscription.current_period_start * 1000),
+//       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+//     });
 
-    return res.status(200).json({
-      message: "Subscription verified successfully",
-      subscription: newSubscription,
-    });
+//     return res.status(200).json({
+//       message: "Subscription verified successfully",
+//       subscription: newSubscription,
+//     });
 
-  } catch (error: any) {
-    return res.status(500).json({
-      error: error.message || "Failed to verify subscription",
-    });
-  }
-};
+//   } catch (error: any) {
+//     return res.status(500).json({
+//       error: error.message || "Failed to verify subscription",
+//     });
+//   }
+// };
 
 
 
