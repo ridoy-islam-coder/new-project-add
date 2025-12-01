@@ -20,6 +20,10 @@ router.post("/tiers/initialize", subscriptionController.initializeDefaultTiers)
 
 // ===== SUBSCRIPTION ROUTES =====
 router.post("/checkout", auth, subscriptionController.createCheckoutSession)
+
+
+router.post("/verify-subscription", auth, subscriptionController.verifySubscription)
+
 router.get("/my-subscription", auth, subscriptionController.getUserSubscription)
 router.post("/cancel", auth, subscriptionController.cancelSubscription)
 
